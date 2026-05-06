@@ -7,7 +7,6 @@ function createPuzzle() {
   tiles = [...Array(15).keys()];
   tiles.push(null);
   shuffle(tiles);
-
   render();
 }
 
@@ -24,7 +23,12 @@ function render() {
     } else {
       const row = Math.floor(tile / size);
       const col = tile % size;
-      div.style.backgroundPosition = `-${col * 100}px -${row * 100}px`;
+
+      div.style.backgroundPosition = `
+        ${(-col * 100) / (size - 1)}% 
+        ${(-row * 100) / (size - 1)}%
+      `;
+
       div.addEventListener("click", () => moveTile(index));
     }
 
@@ -69,12 +73,17 @@ function restartGame() {
   createPuzzle();
 }
 
-/* CONFETTI */
+/* CONFETI OPTIMIZADO MOVIL */
 
 const canvas = document.getElementById("confetti");
 const ctx = canvas.getContext("2d");
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
+
+function resizeCanvas() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+resizeCanvas();
+window.addEventListener("resize", resizeCanvas);
 
 let confetti = [];
 let confettiInterval;
@@ -85,10 +94,10 @@ function startConfetti() {
       x: Math.random() * canvas.width,
       y: 0,
       r: Math.random() * 6 + 4,
-      d: Math.random() * 5 + 2,
+      d: Math.random() * 4 + 2,
       color: `hsl(${Math.random() * 360}, 100%, 50%)`
     });
-  }, 100);
+  }, 120);
 
   requestAnimationFrame(updateConfetti);
 }
