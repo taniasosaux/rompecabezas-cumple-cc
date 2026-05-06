@@ -1,152 +1,155 @@
-const size = 4;
-const puzzle = document.getElementById("puzzle");
+document.addEventListener("DOMContentLoaded", function () {
 
-let tiles = [];
-let emptyIndex = 15;
+  const size = 4;
+  const puzzle = document.getElementById("puzzle");
+  const overlay = document.getElementById("overlay");
+  const canvas = document.getElementById("confetti");
+  const ctx = canvas.getContext("2d");
 
-function createPuzzle() {
-  tiles = [...Array(size * size - 1).keys()];
-  tiles.push(null);
-  shuffle(tiles);
-  render();
-}
+  let tiles = [];
+  let emptyIndex = 15;
+  let confettiPieces = [];
+  let animationId;
 
-function render() {
-  puzzle.innerHTML = "";
-
-  const puzzleWidth = puzzle.clientWidth;
-  const puzzleHeight = puzzle.clientHeight;
-
-  const tileWidth = puzzleWidth / size;
-  const tileHeight = puzzleHeight / size;
-
-  tiles.forEach((tile, index) => {
-    const div = document.createElement("div");
-    div.classList.add("tile");
-
-    div.style.width = `${tileWidth}px`;
-    div.style.height = `${tileHeight}px`;
-    div.style.backgroundSize = `${puzzleWidth}px ${puzzleHeight}px`;
-
-    if (tile === null) {
-      div.classList.add("empty");
-      emptyIndex = index;
-    } else {
-      const row = Math.floor(tile / size);
-      const col = tile % size;
-
-      div.style.backgroundPosition =
-        `-${col * tileWidth}px -${row * tileHeight}px`;
-
-      div.addEventListener("click", () => moveTile(index));
-    }
-
-    puzzle.appendChild(div);
-  });
-}
-
-function moveTile(index) {
-  const validMoves = [
-    emptyIndex - 1,
-    emptyIndex + 1,
-    emptyIndex - size,
-    emptyIndex + size
-  ];
-
-  if (validMoves.includes(index)) {
-    [tiles[index], tiles[emptyIndex]] =
-      [tiles[emptyIndex], tiles[index]];
-
-    emptyIndex = index;
+  function createPuzzle() {
+    tiles = [...Array(size * size - 1).keys()];
+    tiles.push(null);
+    shuffle(tiles);
     render();
-    checkWin();
-  }
-}
-
-function shuffle(array) {
-  for (let i = array.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [array[i], array[j]] = [array[j], array[i]];
-  }
-}
-
-function checkWin() {
-  for (let i = 0; i < tiles.length - 1; i++) {
-    if (tiles[i] !== i) return;
   }
 
-  document.getElementById("overlay").classList.add("show");
-  startConfetti();
-}
+  function render() {
+    puzzle.innerHTML = "";
 
-function restartGame() {
-  document.getElementById("overlay").classList.remove("show");
-  stopConfetti();
-  createPuzzle();
-}
+    const puzzleWidth = puzzle.clientWidth;
+    const puzzleHeight = puzzle.clientHeight;
 
-window.addEventListener("resize", render);
+    const tileWidth = puzzleWidth / size;
+    const tileHeight = puzzleHeight / size;
 
-createPuzzle();
+    tiles.forEach((tile, index) => {
+      const div = document.createElement("div");
+      div.classList.add("tile");
 
-/* ======================
-   CONFETI FUNCIONAL
-====================== */
+      div.style.width = `${tileWidth}px`;
+      div.style.height = `${tileHeight}px`;
+      div.style.backgroundSize = `${puzzleWidth}px ${puzzleHeight}px`;
 
-const canvas = document.getElementById("confetti");
-const ctx = canvas.getContext("2d");
+      if (tile === null) {
+        div.classList.add("empty");
+        emptyIndex = index;
+      } else {
+        const row = Math.floor(tile / size);
+        const col = tile % size;
 
-let confettiPieces = [];
-let animationId;
+        div.style.backgroundPosition =
+          `-${col * tileWidth}px -${row * tileHeight}px`;
 
-function resizeCanvas() {
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-}
+        div.addEventListener("click", () => moveTile(index));
+      }
 
-resizeCanvas();
-window.addEventListener("resize", resizeCanvas);
-
-function startConfetti() {
-  confettiPieces = [];
-
-  const centerX = canvas.width / 2;
-  const centerY = canvas.height / 2;
-
-  for (let i = 0; i < 200; i++) {
-    const angle = Math.random() * Math.PI * 2;
-    const velocity = Math.random() * 8 + 4;
-
-    confettiPieces.push({
-      x: centerX,
-      y: centerY,
-      vx: Math.cos(angle) * velocity,
-      vy: Math.sin(angle) * velocity,
-      size: Math.random() * 8 + 4,
-      gravity: 0.2,
-      color: `hsl(${Math.random() * 360}, 100%, 50%)`
+      puzzle.appendChild(div);
     });
   }
 
-  animateConfetti();
-}
+  function moveTile(index) {
+    const validMoves = [
+      emptyIndex - 1,
+      emptyIndex + 1,
+      emptyIndex - size,
+      emptyIndex + size
+    ];
 
-function animateConfetti() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+    if (validMoves.includes(index)) {
+      [tiles[index], tiles[emptyIndex]] =
+        [tiles[emptyIndex], tiles[index]];
 
-  confettiPieces.forEach(piece => {
-    piece.vy += piece.gravity;
-    piece.x += piece.vx;
-    piece.y += piece.vy;
+      emptyIndex = index;
+      render();
+      checkWin();
+    }
+  }
 
-    ctx.fillStyle = piece.color;
-    ctx.fillRect(piece.x, piece.y, piece.size, piece.size);
-  });
+  function shuffle(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [array[i], array[j]] = [array[j], array[i]];
+    }
+  }
 
-  animationId = requestAnimationFrame(animateConfetti);
-}
+  function checkWin() {
+    for (let i = 0; i < tiles.length - 1; i++) {
+      if (tiles[i] !== i) return;
+    }
 
-function stopConfetti() {
-  cancelAnimationFrame(animationId);
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-}
+    overlay.classList.add("show");
+    startConfetti();
+  }
+
+  window.restartGame = function () {
+    overlay.classList.remove("show");
+    stopConfetti();
+    createPuzzle();
+  };
+
+  window.addEventListener("resize", render);
+
+  /* ======================
+     CONFETI FUNCIONAL
+  ====================== */
+
+  function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+
+  resizeCanvas();
+  window.addEventListener("resize", resizeCanvas);
+
+  function startConfetti() {
+    confettiPieces = [];
+
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+
+    for (let i = 0; i < 200; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const velocity = Math.random() * 8 + 4;
+
+      confettiPieces.push({
+        x: centerX,
+        y: centerY,
+        vx: Math.cos(angle) * velocity,
+        vy: Math.sin(angle) * velocity,
+        size: Math.random() * 8 + 4,
+        gravity: 0.2,
+        color: `hsl(${Math.random() * 360}, 100%, 50%)`
+      });
+    }
+
+    animateConfetti();
+  }
+
+  function animateConfetti() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    confettiPieces.forEach(piece => {
+      piece.vy += piece.gravity;
+      piece.x += piece.vx;
+      piece.y += piece.vy;
+
+      ctx.fillStyle = piece.color;
+      ctx.fillRect(piece.x, piece.y, piece.size, piece.size);
+    });
+
+    animationId = requestAnimationFrame(animateConfetti);
+  }
+
+  function stopConfetti() {
+    cancelAnimationFrame(animationId);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
+
+  createPuzzle();
+
+});
