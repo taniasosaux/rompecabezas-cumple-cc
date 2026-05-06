@@ -1,10 +1,11 @@
 const size = 4;
 const puzzle = document.getElementById("puzzle");
+
 let tiles = [];
 let emptyIndex = 15;
 
 function createPuzzle() {
-  tiles = [...Array(15).keys()];
+  tiles = [...Array(size * size - 1).keys()];
   tiles.push(null);
   shuffle(tiles);
   render();
@@ -13,9 +14,19 @@ function createPuzzle() {
 function render() {
   puzzle.innerHTML = "";
 
+  const puzzleWidth = puzzle.clientWidth;
+  const puzzleHeight = puzzle.clientHeight;
+
+  const tileWidth = puzzleWidth / size;
+  const tileHeight = puzzleHeight / size;
+
   tiles.forEach((tile, index) => {
     const div = document.createElement("div");
     div.classList.add("tile");
+
+    div.style.width = `${tileWidth}px`;
+    div.style.height = `${tileHeight}px`;
+    div.style.backgroundSize = `${puzzleWidth}px ${puzzleHeight}px`;
 
     if (tile === null) {
       div.classList.add("empty");
@@ -24,10 +35,8 @@ function render() {
       const row = Math.floor(tile / size);
       const col = tile % size;
 
-      div.style.backgroundPosition = `
-        ${(-col * 100) / (size - 1)}% 
-        ${(-row * 100) / (size - 1)}%
-      `;
+      div.style.backgroundPosition =
+        `-${col * tileWidth}px -${row * tileHeight}px`;
 
       div.addEventListener("click", () => moveTile(index));
     }
@@ -45,7 +54,9 @@ function moveTile(index) {
   ];
 
   if (validMoves.includes(index)) {
-    [tiles[index], tiles[emptyIndex]] = [tiles[emptyIndex], tiles[index]];
+    [tiles[index], tiles[emptyIndex]] =
+      [tiles[emptyIndex], tiles[index]];
+
     emptyIndex = index;
     render();
     checkWin();
@@ -60,9 +71,10 @@ function shuffle(array) {
 }
 
 function checkWin() {
-  for (let i = 0; i < 15; i++) {
+  for (let i = 0; i < tiles.length - 1; i++) {
     if (tiles[i] !== i) return;
   }
+
   document.getElementById("overlay").classList.add("show");
   startConfetti();
 }
@@ -73,10 +85,20 @@ function restartGame() {
   createPuzzle();
 }
 
-/* CONFETI OPTIMIZADO MOVIL */
+window.addEventListener("resize", render);
+
+createPuzzle();
+
+/* =================================
+   CONFETI + EFECTOS ÉPICOS
+================================= */
 
 const canvas = document.getElementById("confetti");
 const ctx = canvas.getContext("2d");
+
+let confettiPieces = [];
+let animationId;
+let explosionDone = false;
 
 function resizeCanvas() {
   canvas.width = window.innerWidth;
@@ -85,44 +107,66 @@ function resizeCanvas() {
 resizeCanvas();
 window.addEventListener("resize", resizeCanvas);
 
-let confetti = [];
-let confettiInterval;
-
 function startConfetti() {
-  confettiInterval = setInterval(() => {
-    confetti.push({
-      x: Math.random() * canvas.width,
-      y: 0,
-      r: Math.random() * 6 + 4,
-      d: Math.random() * 4 + 2,
+
+  // Vibración móvil (si el dispositivo lo permite)
+  if (navigator.vibrate) {
+    navigator.vibrate([200, 100, 200]);
+  }
+
+  playSound();
+
+  confettiPieces = [];
+  explosionDone = false;
+
+  // EXPLOSIÓN DESDE EL CENTRO
+  const centerX = canvas.width / 2;
+  const centerY = canvas.height / 2;
+
+  for (let i = 0; i < 200; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const velocity = Math.random() * 8 + 4;
+
+    confettiPieces.push({
+      x: centerX,
+      y: centerY,
+      vx: Math.cos(angle) * velocity,
+      vy: Math.sin(angle) * velocity,
+      size: Math.random() * 8 + 4,
+      gravity: 0.15,
       color: `hsl(${Math.random() * 360}, 100%, 50%)`
     });
-  }, 120);
+  }
 
-  requestAnimationFrame(updateConfetti);
+  animateConfetti();
+}
+
+function animateConfetti() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  confettiPieces.forEach(piece => {
+    piece.vy += piece.gravity;
+    piece.x += piece.vx;
+    piece.y += piece.vy;
+
+    ctx.fillStyle = piece.color;
+    ctx.fillRect(piece.x, piece.y, piece.size, piece.size);
+  });
+
+  animationId = requestAnimationFrame(animateConfetti);
 }
 
 function stopConfetti() {
-  clearInterval(confettiInterval);
-  confetti = [];
-}
-
-function updateConfetti() {
+  cancelAnimationFrame(animationId);
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  confetti.forEach((c, i) => {
-    c.y += c.d;
-    ctx.beginPath();
-    ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
-    ctx.fillStyle = c.color;
-    ctx.fill();
-
-    if (c.y > canvas.height) confetti.splice(i, 1);
-  });
-
-  if (confetti.length > 0) {
-    requestAnimationFrame(updateConfetti);
-  }
 }
 
-createPuzzle();
+/* ======================
+   SONIDO CELEBRACIÓN
+====================== */
+
+function playSound() {
+  const audio = new Audio("https://assets.mixkit.co/sfx/preview/mixkit-party-horn-718.mp3");
+  audio.volume = 0.6;
+  audio.play();
+}
