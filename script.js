@@ -89,37 +89,27 @@ window.addEventListener("resize", render);
 
 createPuzzle();
 
-/* =================================
-   CONFETI + EFECTOS ÉPICOS
-================================= */
+/* ======================
+   CONFETI FUNCIONAL
+====================== */
 
 const canvas = document.getElementById("confetti");
 const ctx = canvas.getContext("2d");
 
 let confettiPieces = [];
 let animationId;
-let explosionDone = false;
 
 function resizeCanvas() {
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
 }
+
 resizeCanvas();
 window.addEventListener("resize", resizeCanvas);
 
 function startConfetti() {
-
-  // Vibración móvil (si el dispositivo lo permite)
-  if (navigator.vibrate) {
-    navigator.vibrate([200, 100, 200]);
-  }
-
-  playSound();
-
   confettiPieces = [];
-  explosionDone = false;
 
-  // EXPLOSIÓN DESDE EL CENTRO
   const centerX = canvas.width / 2;
   const centerY = canvas.height / 2;
 
@@ -133,7 +123,7 @@ function startConfetti() {
       vx: Math.cos(angle) * velocity,
       vy: Math.sin(angle) * velocity,
       size: Math.random() * 8 + 4,
-      gravity: 0.15,
+      gravity: 0.2,
       color: `hsl(${Math.random() * 360}, 100%, 50%)`
     });
   }
@@ -159,14 +149,4 @@ function animateConfetti() {
 function stopConfetti() {
   cancelAnimationFrame(animationId);
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-}
-
-/* ======================
-   SONIDO CELEBRACIÓN
-====================== */
-
-function playSound() {
-  const audio = new Audio("https://assets.mixkit.co/sfx/preview/mixkit-party-horn-718.mp3");
-  audio.volume = 0.6;
-  audio.play();
 }
